@@ -1,12 +1,33 @@
-import React from 'react';
+import React from "react";
 
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
 
 const features = [
-    { icon: '🤖', title: 'AI Risk Prediction', desc: 'Machine learning model trained on 250,000+ records' },
-    { icon: '🔍', title: 'Explainable AI', desc: 'SHAP shows which factors drive your risk' },
-    { icon: '💡', title: 'Personalized Tips', desc: 'Lifestyle recommendations based on your profile' },
-    { icon: '📊', title: 'Health Dashboard', desc: 'Track your risk trend over time' }
+
+    {
+        icon: "🤖",
+        title: "AI Risk Prediction",
+        desc: "Machine learning model trained on 250,000+ records"
+    },
+
+    {
+        icon: "🔍",
+        title: "Explainable AI",
+        desc: "SHAP shows which factors drive your risk"
+    },
+
+    {
+        icon: "💡",
+        title: "Personalized Tips",
+        desc: "Lifestyle recommendations based on your profile"
+    },
+
+    {
+        icon: "📊",
+        title: "Health Dashboard",
+        desc: "Track your risk trend over time"
+    }
+
 ];
 
 function Home() {
@@ -15,54 +36,99 @@ function Home() {
 
     return (
 
-        <div className='max-w-5xl mx-auto mt-12 px-4 text-center'>
+        <div className="container mt-5">
 
-            <h1 className='text-4xl font-bold text-slate-900 mb-2'>🩺 SwasthAI</h1>
+            <div className="row justify-content-center">
 
-            <h4 className='text-slate-500 text-lg mb-3'>
-                An Explainable AI-Based Preventive Healthcare Platform
-            </h4>
+                <div className="col-lg-10 text-center">
 
-            <p className='text-slate-700 mb-10'>
-                Detect Early. Prevent Better. Live Healthier.
-            </p>
+                    <h1 className="display-4 fw-bold mb-2">
+                        🩺 SwasthAI
+                    </h1>
 
-            <div className='grid grid-cols-2 md:grid-cols-4 gap-4 mb-12'>
+                    <h4 className="text-muted mb-3">
+                        An Explainable AI-Based Preventive Healthcare Platform
+                    </h4>
 
-                {features.map((f) => (
+                    <p className="mb-5">
+                        Detect Early. Prevent Better. Live Healthier.
+                    </p>
 
-                    <div key={f.title} className='bg-white rounded-xl shadow-sm border border-slate-200 p-4 text-center'>
-                        <h2 className='text-3xl mb-2'>{f.icon}</h2>
-                        <h6 className='font-semibold text-slate-800'>{f.title}</h6>
-                        <p className='text-slate-500 text-sm mt-1'>{f.desc}</p>
+                    {/* Features */}
+
+                    <div className="row g-4 mb-5">
+
+                        {features.map((f) => (
+
+                            <div
+                                className="col-md-3 col-sm-6"
+                                key={f.title}
+                            >
+
+                                <div className="card h-100 shadow-sm border">
+
+                                    <div className="card-body text-center">
+
+                                        <h1 className="mb-3">
+
+                                            {f.icon}
+
+                                        </h1>
+
+                                        <h5 className="card-title">
+
+                                            {f.title}
+
+                                        </h5>
+
+                                        <p className="card-text text-muted">
+
+                                            {f.desc}
+
+                                        </p>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        ))}
+
                     </div>
 
-                ))}
+                    {/* Buttons */}
+
+                    <div className="d-flex justify-content-center gap-3">
+
+                        <button
+                            className="btn btn-primary btn-lg"
+                            onClick={() => navigate("/register")}
+                        >
+                            Get Started
+                        </button>
+
+                        <button
+                            className="btn btn-outline-primary btn-lg"
+                            onClick={() => navigate("/login")}
+                        >
+                            Login
+                        </button>
+
+                    </div>
+
+                    {/* Footer Note */}
+
+                    <p className="text-muted mt-5">
+
+                        ⚠️ SwasthAI provides risk assessment only, not medical diagnosis.
+                        Always consult a healthcare professional.
+
+                    </p>
+
+                </div>
 
             </div>
-
-            <div className='flex justify-center gap-4'>
-
-                <button
-                    className='bg-brand-600 text-white text-lg px-6 py-3 rounded-md font-medium hover:bg-brand-700 transition'
-                    onClick={() => navigate('/register')}
-                >
-                    Get Started
-                </button>
-
-                <button
-                    className='border border-brand-600 text-brand-600 text-lg px-6 py-3 rounded-md font-medium hover:bg-brand-50 transition'
-                    onClick={() => navigate('/login')}
-                >
-                    Login
-                </button>
-
-            </div>
-
-            <p className='text-slate-500 text-sm mt-12'>
-                ⚠️ SwasthAI provides risk assessment only, not medical diagnosis.
-                Always consult a healthcare professional.
-            </p>
 
         </div>
 

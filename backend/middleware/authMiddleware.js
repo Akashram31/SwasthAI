@@ -10,7 +10,7 @@ const authMiddleware = (req, res, next) => {
 
             return res.status(401).json({
                 success: false,
-                message: "No token provided"
+                message: "Please log in to continue."
             });
 
         }
@@ -18,6 +18,15 @@ const authMiddleware = (req, res, next) => {
         const token = authHeader.startsWith("Bearer ")
             ? authHeader.split(" ")[1]
             : authHeader;
+
+        if (!token) {
+
+            return res.status(401).json({
+                success: false,
+                message: "Please log in to continue."
+            });
+
+        }
 
         const decoded = jwt.verify(
             token,
@@ -31,11 +40,8 @@ const authMiddleware = (req, res, next) => {
     } catch (error) {
 
         return res.status(401).json({
-
             success: false,
-
-            message: "Invalid or expired token"
-
+            message: "Your session has expired or is invalid. Please log in again."
         });
 
     }

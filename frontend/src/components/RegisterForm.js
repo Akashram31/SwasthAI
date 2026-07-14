@@ -1,194 +1,373 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import api from "../api/axios";
 
+
 function RegisterForm() {
+
     const {
         register,
         handleSubmit,
         formState: { errors },
-        reset,
+        reset
     } = useForm();
 
+
     const [message, setMessage] = useState("");
+    const [messageType, setMessageType] = useState("");
+    const [loading, setLoading] = useState(false);
+
     const navigate = useNavigate();
 
+
     const onSubmit = async (data) => {
+
+        setMessage("");
+        setMessageType("");
+        setLoading(true);
+
         try {
-            // Convert age to number
-            data.age = Number(data.age);
 
-            // Convert gender to numeric value for ML
-            data.gender = data.gender === "Male" ? 1 : 0;
+            const registrationData = {
 
-            const response = await api.post("/auth/register", data);
+                name: data.name,
 
-            setMessage(response.data.message);
+                email: data.email,
+
+                password: data.password,
+
+                // 0 = Female, 1 = Male
+                gender: data.gender === "Male" ? 1 : 0
+
+            };
+
+
+            const response = await api.post(
+                "/auth/register",
+                registrationData
+            );
+
+
+            setMessage(
+                response.data.message ||
+                "Registration successful. You can now log in."
+            );
+
+            setMessageType("success");
 
             reset();
 
+
             setTimeout(() => {
+
                 navigate("/login");
-            }, 1000);
+
+            }, 1500);
+
 
         } catch (error) {
+
             setMessage(
                 error.response?.data?.message ||
                 "Something went wrong. Please try again."
             );
+
+            setMessageType("error");
+
+        } finally {
+
+            setLoading(false);
+
         }
+
     };
 
+
     return (
-        <div className="max-w-md mx-auto mt-12 px-4">
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
 
-                <h3 className="text-center text-xl font-semibold mb-5 text-slate-800">
-                    Create Account
-                </h3>
+        <div className="container mt-5">
 
-                <form
-                    onSubmit={handleSubmit(onSubmit)}
-                    className="space-y-4"
-                >
+            <div className="row justify-content-center">
 
-                    {/* Name */}
+                <div className="col-md-6">
 
-                    <div>
-                        <input
-                            type="text"
-                            placeholder="Enter Full Name"
-                            className="w-full border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                            {...register("name", {
-                                required: "Name is required",
-                            })}
-                        />
+                    <div className="card shadow-sm border">
 
-                        {errors.name && (
-                            <p className="text-red-600 text-sm mt-1">
-                                {errors.name.message}
+                        <div className="card-body p-4">
+
+
+                            <h3 className="text-center mb-4">
+                                Create Account
+                            </h3>
+
+
+                            <form onSubmit={handleSubmit(onSubmit)}>
+
+
+                                {/* NAME */}
+
+                                <div className="mb-3">
+
+                                    <input
+
+                                        type="text"
+
+                                        placeholder="Enter Full Name"
+
+                                        className={
+                                            errors.name
+                                                ? "form-control is-invalid"
+                                                : "form-control"
+                                        }
+
+                                        {...register("name", {
+
+                                            required:
+                                                "Name is required.",
+
+                                            minLength: {
+
+                                                value: 2,
+
+                                                message:
+                                                    "Name must contain at least 2 characters."
+
+                                            }
+
+                                        })}
+
+                                    />
+
+
+                                    {errors.name && (
+
+                                        <p className="text-danger mt-1 mb-0">
+
+                                            {errors.name.message}
+
+                                        </p>
+
+                                    )}
+
+                                </div>
+
+
+                                {/* EMAIL */}
+
+                                <div className="mb-3">
+
+                                    <input
+
+                                        type="email"
+
+                                        placeholder="Enter Email"
+
+                                        className={
+                                            errors.email
+                                                ? "form-control is-invalid"
+                                                : "form-control"
+                                        }
+
+                                        {...register("email", {
+
+                                            required:
+                                                "Email is required.",
+
+                                            pattern: {
+
+                                                value:
+                                                    /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+
+                                                message:
+                                                    "Please enter a valid email address."
+
+                                            }
+
+                                        })}
+
+                                    />
+
+
+                                    {errors.email && (
+
+                                        <p className="text-danger mt-1 mb-0">
+
+                                            {errors.email.message}
+
+                                        </p>
+
+                                    )}
+
+                                </div>
+
+
+                                {/* PASSWORD */}
+
+                                <div className="mb-3">
+
+                                    <input
+
+                                        type="password"
+
+                                        placeholder="Enter Password"
+
+                                        className={
+                                            errors.password
+                                                ? "form-control is-invalid"
+                                                : "form-control"
+                                        }
+
+                                        {...register("password", {
+
+                                            required:
+                                                "Password is required.",
+
+                                            minLength: {
+
+                                                value: 6,
+
+                                                message:
+                                                    "Password must contain at least 6 characters."
+
+                                            }
+
+                                        })}
+
+                                    />
+
+
+                                    {errors.password && (
+
+                                        <p className="text-danger mt-1 mb-0">
+
+                                            {errors.password.message}
+
+                                        </p>
+
+                                    )}
+
+                                </div>
+
+
+                                {/* GENDER */}
+
+                                <div className="mb-3">
+
+                                    <select
+
+                                        className={
+                                            errors.gender
+                                                ? "form-select is-invalid"
+                                                : "form-select"
+                                        }
+
+                                        defaultValue=""
+
+                                        {...register("gender", {
+
+                                            required:
+                                                "Please select your gender."
+
+                                        })}
+
+                                    >
+
+                                        <option value="" disabled>
+                                            Select Gender
+                                        </option>
+
+                                        <option value="Male">
+                                            Male
+                                        </option>
+
+                                        <option value="Female">
+                                            Female
+                                        </option>
+
+                                    </select>
+
+
+                                    {errors.gender && (
+
+                                        <p className="text-danger mt-1 mb-0">
+
+                                            {errors.gender.message}
+
+                                        </p>
+
+                                    )}
+
+                                </div>
+
+
+                                {/* REGISTER BUTTON */}
+
+                                <button
+
+                                    type="submit"
+
+                                    className="btn btn-primary w-100"
+
+                                    disabled={loading}
+
+                                >
+
+                                    {loading
+                                        ? "Registering..."
+                                        : "Register"}
+
+                                </button>
+
+
+                            </form>
+
+
+                            {/* BACKEND MESSAGE */}
+
+                            {message && (
+
+                                <p
+                                    className={`text-center mt-3 mb-0 ${
+                                        messageType === "success"
+                                            ? "text-success"
+                                            : "text-danger"
+                                    }`}
+                                >
+
+                                    {message}
+
+                                </p>
+
+                            )}
+
+
+                            {/* LOGIN LINK */}
+
+                            <p className="text-center mt-3 mb-0">
+
+                                Already have an account?{" "}
+
+                                <Link to="/login">
+                                    Login here
+                                </Link>
+
                             </p>
-                        )}
+
+
+                        </div>
+
                     </div>
 
-                    {/* Email */}
-
-                    <div>
-                        <input
-                            type="email"
-                            placeholder="Enter Email"
-                            className="w-full border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                            {...register("email", {
-                                required: "Email is required",
-                            })}
-                        />
-
-                        {errors.email && (
-                            <p className="text-red-600 text-sm mt-1">
-                                {errors.email.message}
-                            </p>
-                        )}
-                    </div>
-
-                    {/* Password */}
-
-                    <div>
-                        <input
-                            type="password"
-                            placeholder="Enter Password"
-                            className="w-full border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                            {...register("password", {
-                                required: "Password is required",
-                                minLength: {
-                                    value: 6,
-                                    message: "Password should be at least 6 characters",
-                                },
-                            })}
-                        />
-
-                        {errors.password && (
-                            <p className="text-red-600 text-sm mt-1">
-                                {errors.password.message}
-                            </p>
-                        )}
-                    </div>
-
-                    {/* Age */}
-
-                    <div>
-                        <input
-                            type="number"
-                            placeholder="Enter Age"
-                            className="w-full border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                            {...register("age", {
-                                required: "Age is required",
-                                min: {
-                                    value: 18,
-                                    message: "Age must be at least 18",
-                                },
-                                max: {
-                                    value: 120,
-                                    message: "Enter a valid age",
-                                },
-                            })}
-                        />
-
-                        {errors.age && (
-                            <p className="text-red-600 text-sm mt-1">
-                                {errors.age.message}
-                            </p>
-                        )}
-                    </div>
-
-                    {/* Gender */}
-
-                    <div>
-                        <select
-                            className="w-full border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                            defaultValue=""
-                            {...register("gender", {
-                                required: "Gender is required",
-                            })}
-                        >
-                            <option value="" disabled>
-                                Select Gender
-                            </option>
-
-                            <option value="Male">
-                                Male
-                            </option>
-
-                            <option value="Female">
-                                Female
-                            </option>
-                        </select>
-
-                        {errors.gender && (
-                            <p className="text-red-600 text-sm mt-1">
-                                {errors.gender.message}
-                            </p>
-                        )}
-                    </div>
-
-                    <button
-                        type="submit"
-                        className="w-full bg-emerald-600 text-white rounded-md py-2 font-medium hover:bg-emerald-700 transition"
-                    >
-                        Register
-                    </button>
-
-                </form>
-
-                {message && (
-                    <p className="mt-4 text-center text-red-600 text-sm">
-                        {message}
-                    </p>
-                )}
+                </div>
 
             </div>
+
         </div>
+
     );
+
 }
+
 
 export default RegisterForm;

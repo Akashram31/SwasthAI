@@ -1,3 +1,4 @@
+
 """
 ============================================================
 SwasthAI
@@ -29,19 +30,35 @@ class PatientData(BaseModel):
         le=80,
         description="Body Mass Index"
     )
+
     height: float = Field(
-    ...,
-    gt=0,
-    le=300,
-    description="Height in centimeters"
+        ...,
+        gt=0,
+        le=300,
+        description="Height in centimeters"
     )
 
     weight: float = Field(
-    ...,
-    gt=0,
-    le=500,
-    description="Weight in kilograms"
-)
+        ...,
+        gt=0,
+        le=500,
+        description="Weight in kilograms"
+    )
+
+    highBP: int = Field(
+        ...,
+        ge=0,
+        le=1,
+        description="High blood pressure: 0 = No, 1 = Yes"
+    )
+
+    highChol: int = Field(
+        ...,
+        ge=0,
+        le=1,
+        description="High cholesterol: 0 = No, 1 = Yes"
+    )
+
     smoking: int = Field(
         ...,
         ge=0,
@@ -134,6 +151,9 @@ class PredictionResponse(BaseModel):
     height: float
     weight: float
     bmi: float
+
+    highBP: int
+    highChol: int
 
     smoking: int
     alcohol: int

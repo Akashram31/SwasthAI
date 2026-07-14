@@ -2,6 +2,7 @@ const Assessment = require("../models/Assessment");
 const User = require("../models/User");
 const axios = require("axios");
 
+
 // ======================================================
 // Submit Assessment
 // ======================================================
@@ -11,9 +12,11 @@ exports.submitAssessment = async (req, res) => {
     try {
 
         const {
-
+            age,
             height,
             weight,
+            highBP,
+            highChol,
             smoking,
             alcohol,
             physicalActivity,
@@ -21,12 +24,12 @@ exports.submitAssessment = async (req, res) => {
             veggiesConsumption,
             generalHealth,
             difficultyWalking
-
         } = req.body;
 
-        // ---------------------------------------------
-        // Get logged-in user
-        // ---------------------------------------------
+
+        // ======================================================
+        // GET LOGGED-IN USER
+        // ======================================================
 
         const user = await User.findById(req.user.id);
 
@@ -34,107 +37,328 @@ exports.submitAssessment = async (req, res) => {
 
             return res.status(404).json({
                 success: false,
-                message: "User not found"
+                message:
+                    "User account not found. Please register first and then log in."
             });
-
         }
 
-        // ---------------------------------------------
-        // Calculate BMI
-        // ---------------------------------------------
 
-        const heightMeters = height / 100;
+        // ======================================================
+        // VALIDATE CURRENT AGE FROM ASSESSMENT FORM
+        // ======================================================
+
+        const numericAge = Number(age);
+
+        if (
+            age === undefined ||
+            age === null ||
+            !Number.isInteger(numericAge) ||
+            numericAge < 18 ||
+            numericAge > 120
+        ) {
+
+            return res.status(400).json({
+                success: false,
+                message:
+                    "Age must be a whole number between 18 and 120 years."
+            });
+        }
+
+
+        // ======================================================
+        // VALIDATE USER GENDER
+        // Gender still comes from registered user account
+        // 0 = Female, 1 = Male
+        // ======================================================
+
+        if (
+            user.gender === undefined ||
+            user.gender === null ||
+            ![0, 1].includes(Number(user.gender))
+        ) {
+
+            return res.status(400).json({
+                success: false,
+                message:
+                    "Gender information is missing or invalid. Please check your account details."
+            });
+        }
+
+
+        // ======================================================
+        // VALIDATE HEIGHT
+        // ======================================================
+
+        if (
+            height === undefined ||
+            height === null ||
+            isNaN(Number(height)) ||
+            Number(height) <= 0 ||
+            Number(height) > 300
+        ) {
+
+            return res.status(400).json({
+                success: false,
+                message:
+                    "Height must be greater than 0 and at most 300 cm."
+            });
+        }
+
+
+        // ======================================================
+        // VALIDATE WEIGHT
+        // ======================================================
+
+        if (
+            weight === undefined ||
+            weight === null ||
+            isNaN(Number(weight)) ||
+            Number(weight) <= 0 ||
+            Number(weight) > 500
+        ) {
+
+            return res.status(400).json({
+                success: false,
+                message:
+                    "Weight must be greater than 0 and at most 500 kg."
+            });
+        }
+
+
+        // ======================================================
+        // VALIDATE BINARY FIELDS
+        // All fields below must contain either 0 or 1
+        // ======================================================
+
+        const binaryFields = [
+
+            {
+                name: "High blood pressure",
+                value: highBP
+            },
+
+            {
+                name: "High cholesterol",
+                value: highChol
+            },
+
+            {
+                name: "Smoking",
+                value: smoking
+            },
+
+            {
+                name: "Heavy alcohol consumption",
+                value: alcohol
+            },
+
+            {
+                name: "Physical activity",
+                value: physicalActivity
+            },
+
+            {
+                name: "Fruit consumption",
+                value: fruitsConsumption
+            },
+
+            {
+                name: "Vegetable consumption",
+                value: veggiesConsumption
+            },
+
+            {
+                name: "Difficulty walking",
+                value: difficultyWalking
+            }
+
+        ];
+
+
+        for (const field of binaryFields) {
+
+            if (
+                field.value === undefined ||
+                field.value === null ||
+                ![0, 1].includes(Number(field.value))
+            ) {
+
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        `${field.name} must be answered with Yes or No.`
+                });
+            }
+        }
+
+
+        // ======================================================
+        // VALIDATE GENERAL HEALTH
+        // ======================================================
+
+        if (
+            generalHealth === undefined ||
+            generalHealth === null ||
+            ![1, 2, 3, 4, 5].includes(Number(generalHealth))
+        ) {
+
+            return res.status(400).json({
+                success: false,
+                message:
+                    "General health must be selected from Excellent, Very Good, Good, Fair, or Poor."
+            });
+        }
+
+
+        // ======================================================
+        // CONVERT NUMERIC VALUES
+        // ======================================================
+
+        const numericHeight = Number(height);
+
+        const numericWeight = Number(weight);
+
+
+        // ======================================================
+        // CALCULATE BMI
+        // Formula:
+        // BMI = weight in kg / height in meters squared
+        // ======================================================
+
+        const heightMeters = numericHeight / 100;
 
         const bmi = Number(
             (
-                weight /
+                numericWeight /
                 (heightMeters * heightMeters)
             ).toFixed(2)
         );
 
-        // ---------------------------------------------
-        // Prepare ML Input
-        // ---------------------------------------------
+
+        // ======================================================
+        // VALIDATE CALCULATED BMI
+        // Must match FastAPI schema:
+        // BMI > 0 and BMI <= 80
+        // ======================================================
+
+        if (
+            !Number.isFinite(bmi) ||
+            bmi <= 0 ||
+            bmi > 80
+        ) {
+
+            return res.status(400).json({
+                success: false,
+                message:
+                    "The calculated BMI must be greater than 0 and at most 80. Please check your height and weight."
+            });
+        }
+
+
+        // ======================================================
+        // PREPARE ML INPUT
+        // This must match the FastAPI PatientData schema
+        // ======================================================
 
         const mlInput = {
-			height: Number(height),
-			weight: Number(weight),
 
-            bmi,
+            bmi: bmi,
 
-            smoking,
+            height: numericHeight,
 
-            alcohol,
+            weight: numericWeight,
 
-            physicalActivity,
+            highBP: Number(highBP),
 
-            fruitsConsumption,
+            highChol: Number(highChol),
 
-            veggiesConsumption,
+            smoking: Number(smoking),
 
-            generalHealth,
+            alcohol: Number(alcohol),
 
-            difficultyWalking,
+            physicalActivity: Number(physicalActivity),
 
-            age: user.age,
+            fruitsConsumption: Number(fruitsConsumption),
 
-            gender: user.gender
+            veggiesConsumption: Number(veggiesConsumption),
 
+            generalHealth: Number(generalHealth),
+
+            difficultyWalking: Number(difficultyWalking),
+
+            age: numericAge,
+
+            gender: Number(user.gender)
         };
 
-        // ---------------------------------------------
-        // Call FastAPI
-        // ---------------------------------------------
+
+        // ======================================================
+        // CALL FASTAPI ML SERVICE
+        // ======================================================
 
         console.log("ML INPUT:");
-		console.log(mlInput);
-		const mlResponse = await axios.post(
 
-		process.env.ML_API_URL,
+        console.log(mlInput);
 
-		mlInput,
 
-    {
-        headers: {
-            "Content-Type": "application/json"
-        }
-    }
+        const mlResponse = await axios.post(
 
-);
+            process.env.ML_API_URL,
+
+            mlInput,
+
+            {
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            }
+
+        );
+
+
         const prediction = mlResponse.data;
-		console.log("Prediction:");
-		console.log(prediction);
 
-        // ---------------------------------------------
-        // Save Assessment
-        // ---------------------------------------------
+
+        console.log("Prediction:");
+
+        console.log(prediction);
+
+
+        // ======================================================
+        // SAVE ASSESSMENT TO MONGODB
+        // ======================================================
 
         const assessment = await Assessment.create({
 
             user: user._id,
-			 age: prediction.age,
-			gender: prediction.gender,
 
+            age: numericAge,
 
-            height,
+            gender: prediction.gender,
 
-            weight,
+            height: numericHeight,
 
-            bmi,
+            weight: numericWeight,
 
-            smoking,
+            bmi: bmi,
 
-            alcohol,
+            highBP: Number(highBP),
 
-            physicalActivity,
+            highChol: Number(highChol),
 
-            fruitsConsumption,
+            smoking: Number(smoking),
 
-            veggiesConsumption,
+            alcohol: Number(alcohol),
 
-            generalHealth,
+            physicalActivity: Number(physicalActivity),
 
-            difficultyWalking,
+            fruitsConsumption: Number(fruitsConsumption),
+
+            veggiesConsumption: Number(veggiesConsumption),
+
+            generalHealth: Number(generalHealth),
+
+            difficultyWalking: Number(difficultyWalking),
 
             riskProbability: prediction.riskProbability,
 
@@ -143,38 +367,115 @@ exports.submitAssessment = async (req, res) => {
             shapFactors: prediction.shapFactors,
 
             recommendations: prediction.recommendations
-
         });
+
+
+        // ======================================================
+        // SUCCESS RESPONSE
+        // ======================================================
 
         return res.status(201).json({
 
             success: true,
 
-            message: "Assessment submitted successfully",
+            message:
+                "Assessment submitted successfully.",
 
             data: assessment
+        });
+
+
+    } catch (error) {
+
+
+        // ======================================================
+        // LOG ERROR
+        // ======================================================
+
+        console.error("Assessment Error:");
+
+
+        if (error.response) {
+
+            console.log(
+
+                JSON.stringify(
+                    error.response.data,
+                    null,
+                    2
+                )
+
+            );
+
+
+            // ==================================================
+            // FASTAPI VALIDATION ERROR
+            // ==================================================
+
+            if (error.response.status === 422) {
+
+                const detail =
+                    error.response.data?.detail;
+
+
+                if (
+                    Array.isArray(detail) &&
+                    detail.length > 0
+                ) {
+
+                    return res.status(400).json({
+
+                        success: false,
+
+                        message:
+                            detail[0]?.msg ||
+                            "Please check the assessment information and try again."
+
+                    });
+
+                }
+
+            }
+
+
+            // ==================================================
+            // OTHER FASTAPI ERRORS
+            // ==================================================
+
+            return res.status(502).json({
+
+                success: false,
+
+                message:
+                    error.response.data?.detail ||
+                    "The prediction service could not process the assessment."
+
+            });
+
+        }
+
+
+        console.log(error.message);
+
+
+        // ======================================================
+        // GENERAL SERVER ERROR
+        // ======================================================
+
+        return res.status(500).json({
+
+            success: false,
+
+            message:
+                "Something went wrong while processing your assessment. Please try again."
 
         });
 
     }
 
-	catch (error) {
-
-    console.error("Assessment Error:");
-
-    if (error.response) {
-        console.log(JSON.stringify(error.response.data, null, 2));
-    } else {
-        console.log(error.message);
-    }
-
-    return res.status(500).json({
-        success: false,
-        message: "Failed to process assessment"
-    });
-}
-
 };
+
+
 // ======================================================
 // Get Logged-in User Assessment History
 // ======================================================
@@ -187,8 +488,12 @@ exports.getMyAssessments = async (req, res) => {
 
             user: req.user.id
 
-        })
-            .sort({ createdAt: -1 });
+        }).sort({
+
+            createdAt: -1
+
+        });
+
 
         return res.status(200).json({
 
@@ -200,21 +505,28 @@ exports.getMyAssessments = async (req, res) => {
 
         });
 
+
     } catch (error) {
 
-        console.error(error);
+        console.error(
+            "Fetch Assessment History Error:",
+            error
+        );
+
 
         return res.status(500).json({
 
             success: false,
 
-            message: "Failed to fetch assessments"
+            message:
+                "Failed to fetch assessment history. Please try again."
 
         });
 
     }
 
 };
+
 
 // ======================================================
 // Get Single Assessment
@@ -224,7 +536,10 @@ exports.getAssessmentById = async (req, res) => {
 
     try {
 
-        const assessment = await Assessment.findById(req.params.id);
+        const assessment = await Assessment.findById(
+            req.params.id
+        );
+
 
         if (!assessment) {
 
@@ -232,24 +547,34 @@ exports.getAssessmentById = async (req, res) => {
 
                 success: false,
 
-                message: "Assessment not found"
+                message:
+                    "Assessment not found."
 
             });
 
         }
 
-        // Prevent users from viewing others' assessments
-        if (assessment.user.toString() !== req.user.id) {
+
+        // ======================================================
+        // PREVENT USERS FROM VIEWING OTHERS' ASSESSMENTS
+        // ======================================================
+
+        if (
+            assessment.user.toString() !==
+            req.user.id
+        ) {
 
             return res.status(403).json({
 
                 success: false,
 
-                message: "Access denied"
+                message:
+                    "Access denied. You cannot view another user's assessment."
 
             });
 
         }
+
 
         return res.status(200).json({
 
@@ -259,15 +584,21 @@ exports.getAssessmentById = async (req, res) => {
 
         });
 
+
     } catch (error) {
 
-        console.error(error);
+        console.error(
+            "Fetch Assessment Error:",
+            error
+        );
+
 
         return res.status(500).json({
 
             success: false,
 
-            message: "Failed to fetch assessment"
+            message:
+                "Failed to fetch assessment. Please try again."
 
         });
 

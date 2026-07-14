@@ -34,7 +34,7 @@ Unlike traditional prediction systems, SwasthAI provides transparent predictions
 
 * React.js
 * Axios
-* Tailwind CSS
+* Bootstrap
 
 ## Backend
 
@@ -49,7 +49,6 @@ Unlike traditional prediction systems, SwasthAI provides transparent predictions
 * Python
 * FastAPI
 * Scikit-learn
-* Random Forest Classifier
 * SHAP
 * Pandas
 * NumPy
@@ -66,6 +65,7 @@ SwasthAI/
 ├── backend/
 │   │
 │   ├── .env.example
+│   ├── .gitignore
 │   ├── package.json
 │   ├── package-lock.json
 │   ├── server.js
@@ -90,13 +90,18 @@ SwasthAI/
 │
 ├── frontend/
 │   │
+│   ├── .gitignore
 │   ├── package.json
 │   ├── package-lock.json
-│   ├── postcss.config.js
-│   ├── tailwind.config.js
+│   ├── README.md
 │   │
 │   ├── public/
-│   │   └── index.html
+│   │   ├── favicon.ico
+│   │   ├── index.html
+│   │   ├── logo192.png
+│   │   ├── logo512.png
+│   │   ├── manifest.json
+│   │   └── robots.txt
 │   │
 │   └── src/
 │       │
@@ -119,24 +124,31 @@ SwasthAI/
 │       │   ├── Register.js
 │       │   └── Result.js
 │       │
+│       ├── App.css
 │       ├── App.js
+│       ├── App.test.js
+│       ├── index.css
 │       ├── index.js
-│       └── index.css
+│       ├── logo.svg
+│       ├── reportWebVitals.js
+│       └── setupTests.js
 │
 └── ml_service/
     │
+    ├── .gitignore
     ├── requirements.txt
+    ├── diabetes_binary_health_indicators_BRFSS2015.csv
     ├── main.py
     ├── model_utils.py
     ├── recommendation_engine.py
     ├── schemas.py
-    ├── train_model.py
+    ├── train_model_v2.ipynb
     ├── utils.py
-    ├── diabetes_binary_health_indicators_BRFSS2015.csv
     │
-    └── saved_model/
+    └── saved_model_v2/
         ├── diabetes_model.pkl
-        └── metrics.json
+        ├── feature_columns.pkl
+        └── scaler.pkl
 ```
 
 ---
@@ -151,18 +163,21 @@ SwasthAI/
                        │
                        ▼
           Node.js + Express Backend
-                       │
-                       ▼
-            FastAPI Machine Learning API
-                       │
-                       ▼
-        Random Forest Prediction Model
-                       │
-                       ▼
-          SHAP Explainability Engine
-                       │
-                       ▼
-                  MongoDB Database
+              │                 │
+              │                 ▼
+              │           MongoDB Atlas
+              │
+              ▼
+       FastAPI ML Service
+              │
+              ▼
+     Random Forest Model
+              │
+              ▼
+      SHAP Explainability
+              │
+              ▼
+     Prediction + Recommendations
 ```
 
 ---
@@ -173,7 +188,7 @@ SwasthAI/
 
 ```bash
 git clone <repository-url>
-cd SwasthAI
+cd Swasthee
 ```
 
 ---
@@ -255,6 +270,7 @@ http://127.0.0.1:8000
 
 ---
 
+
 # User Input Parameters
 
 * Age
@@ -262,13 +278,16 @@ http://127.0.0.1:8000
 * Height
 * Weight
 * BMI (Automatically Calculated)
+* High Blood Pressure
+* High Cholesterol
 * Smoking Habit
-* Alcohol Consumption
+* Heavy Alcohol Consumption
 * Physical Activity
 * Fruit Consumption
 * Vegetable Consumption
 * General Health
 * Difficulty Walking
+
 
 ---
 

@@ -1,3 +1,4 @@
+
 """
 ============================================================
 SwasthAI
@@ -18,7 +19,10 @@ import joblib
 
 BASE_DIR = Path(__file__).resolve().parent
 
-MODEL_PATH = BASE_DIR / "saved_model" / "diabetes_model.pkl"
+MODEL_DIR = BASE_DIR / "saved_model_v2"
+
+MODEL_PATH = MODEL_DIR / "diabetes_model.pkl"
+FEATURES_PATH = MODEL_DIR / "feature_columns.pkl"
 
 
 # ============================================================
@@ -27,50 +31,44 @@ MODEL_PATH = BASE_DIR / "saved_model" / "diabetes_model.pkl"
 
 def load_model():
     """
-    Load the trained ML model bundle.
+    Load the trained Random Forest model and feature columns.
 
     Returns
     -------
     dict
         {
-            "model": trained model,
+            "model": trained Random Forest model,
             "model_name": model name,
-            "needs_scaling": bool,
-            "scaler": StandardScaler,
-            "feature_names": list,
-            "metrics": dict
+            "needs_scaling": False,
+            "scaler": None,
+            "feature_names": list
         }
     """
 
+    # Check model file
     if not MODEL_PATH.exists():
         raise FileNotFoundError(
             f"Model file not found: {MODEL_PATH}"
         )
 
-    bundle = joblib.load(MODEL_PATH)
+    # Check feature columns file
+    if not FEATURES_PATH.exists():
+        raise FileNotFoundError(
+            f"Feature columns file not found: {FEATURES_PATH}"
+        )
 
-    required_keys = [
-        "model",
-        "model_name",
-        "needs_scaling",
-        "scaler",
-        "feature_names",
-        "metrics"
-    ]
+    # Load trained Random Forest model
+    model = joblib.load(MODEL_PATH)
 
-    for key in required_keys:
-        if key not in bundle:
-            raise KeyError(
-                f"Missing key '{key}' in saved model bundle."
-            )
+    # Load feature names in correct training order
+    feature_names = joblib.load(FEATURES_PATH)
 
     return {
-        "model": bundle["model"],
-        "model_name": bundle["model_name"],
-        "needs_scaling": bundle["needs_scaling"],
-        "scaler": bundle["scaler"],
-        "feature_names": bundle["feature_names"],
-        "metrics": bundle["metrics"]
+        "model": model,
+        "model_name": "Tuned Random Forest",
+        "needs_scaling": False,
+        "scaler": None,
+        "feature_names": feature_names
     }
 
 
@@ -89,3 +87,4 @@ if __name__ == "__main__":
     print(f"Model Name      : {model_bundle['model_name']}")
     print(f"Needs Scaling   : {model_bundle['needs_scaling']}")
     print(f"Features        : {model_bundle['feature_names']}")
+

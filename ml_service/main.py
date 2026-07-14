@@ -1,3 +1,4 @@
+
 """
 ============================================================
 SwasthAI
@@ -25,6 +26,8 @@ from schemas import (
 from utils import convert_age_to_category
 
 from recommendation_engine import generate_recommendations
+
+
 # ============================================================
 # FASTAPI APP
 # ============================================================
@@ -32,8 +35,9 @@ from recommendation_engine import generate_recommendations
 app = FastAPI(
     title="SwasthAI Diabetes Prediction API",
     description="Machine Learning API for Diabetes Prediction",
-    version="1.0"
+    version="2.0"
 )
+
 
 # ============================================================
 # LOAD MODEL
@@ -48,20 +52,21 @@ try:
     feature_names = bundle["feature_names"]
     needs_scaling = bundle["needs_scaling"]
     model_name = bundle["model_name"]
-    metrics = bundle["metrics"]
 
     # ============================================================
     # SHAP EXPLAINER
     # ============================================================
 
     explainer = shap.TreeExplainer(model)
-   
+
 
 except Exception as e:
 
     raise RuntimeError(
-        f"Unable to load model : {e}"
+        f"Unable to load model: {e}"
     )
+
+
 # ============================================================
 # ROOT
 # ============================================================
@@ -89,14 +94,6 @@ def health():
 
 
 # ============================================================
-# METRICS
-# ============================================================
-
-@app.get("/metrics")
-def get_metrics():
-
-    return metrics
-# ============================================================
 # PREDICT
 # ============================================================
 
@@ -118,22 +115,47 @@ def predict(patient: PatientData):
             patient["age"]
         )
 
+
         # ============================================================
         # CREATE INPUT DATAFRAME
+        # EXACT SAME FEATURE ORDER USED DURING MODEL TRAINING
         # ============================================================
 
         input_df = pd.DataFrame([{
+
             "BMI": patient["bmi"],
+
+            "HighBP": patient["highBP"],
+
+            "HighChol": patient["highChol"],
+
             "Smoker": patient["smoking"],
+
             "HvyAlcoholConsump": patient["alcohol"],
+
             "PhysActivity": patient["physicalActivity"],
+
             "Fruits": patient["fruitsConsumption"],
+
             "Veggies": patient["veggiesConsumption"],
+
             "GenHlth": patient["generalHealth"],
+
             "DiffWalk": patient["difficultyWalking"],
+
             "Age": age_category,
+
             "Sex": patient["gender"]
+
         }])
+
+
+        # ============================================================
+        # ENSURE EXACT TRAINING FEATURE ORDER
+        # ============================================================
+
+        input_df = input_df[feature_names]
+
 
         # ============================================================
         # PREPARE MODEL INPUT
@@ -143,6 +165,7 @@ def predict(patient: PatientData):
 
         if needs_scaling:
             model_input = scaler.transform(model_input)
+
 
         # ============================================================
         # PREDICT PROBABILITY
@@ -156,16 +179,23 @@ def predict(patient: PatientData):
             model.predict(model_input)[0]
         )
 
+
         # ============================================================
         # RISK LEVEL
         # ============================================================
 
         if probability < 0.30:
+
             risk_level = "Low"
+
         elif probability < 0.70:
+
             risk_level = "Moderate"
+
         else:
+
             risk_level = "High"
+
 
         # ============================================================
         # RECOMMENDATIONS
@@ -176,6 +206,7 @@ def predict(patient: PatientData):
             probability
         )
 
+
         # ============================================================
         # SHAP EXPLANATION
         # ============================================================
@@ -183,54 +214,106 @@ def predict(patient: PatientData):
         shap_values = explainer.shap_values(input_df)
 
         if isinstance(shap_values, list):
+
             values = shap_values[1][0]
 
         elif isinstance(shap_values, np.ndarray):
 
             if shap_values.ndim == 3:
+
                 values = shap_values[0, :, 1]
+
             else:
+
                 values = shap_values[0]
 
         else:
-            values = np.array(shap_values).flatten()
+
+            values = np.array(
+                shap_values
+            ).flatten()
+
+
+        # ============================================================
+        # CREATE SHAP FACTORS
+        # ============================================================
 
         shap_factors = []
 
-        for feature, value in zip(feature_names, values):
+        for feature, value in zip(
+            feature_names,
+            values
+        ):
+
             shap_factors.append({
+
                 "feature": feature,
-                "contribution": round(float(value), 4)
+
+                "contribution": round(
+                    float(value),
+                    4
+                )
+
             })
 
+
         shap_factors = sorted(
+
             shap_factors,
-            key=lambda x: abs(x["contribution"]),
+
+            key=lambda x: abs(
+                x["contribution"]
+            ),
+
             reverse=True
+
         )
+
 
         # ============================================================
         # RESPONSE
         # ============================================================
 
         return PredictionResponse(
+
             riskLevel=risk_level,
-            riskProbability=round(probability * 100, 2),
+
+            riskProbability=round(
+                probability * 100,
+                2
+            ),
 
             age=patient["age"],
-            gender="Male" if patient["gender"] == 1 else "Female",
+
+            gender=(
+                "Male"
+                if patient["gender"] == 1
+                else "Female"
+            ),
 
             height=patient["height"],
+
             weight=patient["weight"],
+
             bmi=patient["bmi"],
 
+            highBP=patient["highBP"],
+
+            highChol=patient["highChol"],
+
             smoking=patient["smoking"],
+
             alcohol=patient["alcohol"],
-            physicalActivity=patient["physicalActivity"],
+
+            physicalActivity=patient[
+                "physicalActivity"
+            ],
 
             shapFactors=shap_factors[:5],
+
             recommendations=recommendations
         )
+
 
     except Exception as e:
 
@@ -238,4 +321,4 @@ def predict(patient: PatientData):
             status_code=500,
             detail=str(e)
         )
-   
+

@@ -7,15 +7,16 @@ const assessmentSchema = new mongoose.Schema(
         ref: "User",
         required: true
     },
-	age: {
-    type: Number,
-    required: true
-	},
 
-	gender: {
-		type: String,
-		required: true
-	},
+    age: {
+        type: Number,
+        required: true
+    },
+
+    gender: {
+        type: String,
+        required: true
+    },
 
     height: {
         type: Number,
@@ -29,6 +30,26 @@ const assessmentSchema = new mongoose.Schema(
 
     bmi: {
         type: Number,
+        required: true
+    },
+
+    // ======================================================
+    // NEW FEATURE: HIGH BLOOD PRESSURE
+    // ======================================================
+
+    highBP: {
+        type: Number,
+        enum: [0, 1],
+        required: true
+    },
+
+    // ======================================================
+    // NEW FEATURE: HIGH CHOLESTEROL
+    // ======================================================
+
+    highChol: {
+        type: Number,
+        enum: [0, 1],
         required: true
     },
 

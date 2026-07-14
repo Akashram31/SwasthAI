@@ -2,66 +2,188 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
+
 // ======================================================
 // Register User
 // ======================================================
 
 exports.registerUser = async (req, res) => {
+
     try {
 
         const {
             name,
             email,
             password,
-            age,
             gender
         } = req.body;
 
-        // Check if user already exists
-        const existingUser = await User.findOne({ email });
 
-        if (existingUser) {
+        // ======================================================
+        // CHECK REQUIRED FIELDS
+        // ======================================================
+
+        if (
+            !name ||
+            !email ||
+            !password ||
+            gender === undefined
+        ) {
+
             return res.status(400).json({
                 success: false,
-                message: "User already exists"
+                message: "Please fill in all required fields."
             });
         }
 
-        // Hash password
-        const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Create new user
-        const user = await User.create({
-            name,
-            email,
-            password: hashedPassword,
-            age,
-            gender
+        // ======================================================
+        // VALIDATE NAME
+        // ======================================================
+
+        if (name.trim().length < 2) {
+
+            return res.status(400).json({
+                success: false,
+                message: "Name must contain at least 2 characters."
+            });
+        }
+
+
+        // ======================================================
+        // VALIDATE EMAIL
+        // ======================================================
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        if (!emailRegex.test(email.trim())) {
+
+            return res.status(400).json({
+                success: false,
+                message: "Please enter a valid email address."
+            });
+        }
+
+
+        // ======================================================
+        // VALIDATE PASSWORD
+        // ======================================================
+
+        if (password.length < 6) {
+
+            return res.status(400).json({
+                success: false,
+                message: "Password must contain at least 6 characters."
+            });
+        }
+
+
+        // ======================================================
+        // VALIDATE GENDER
+        // 0 = Female, 1 = Male
+        // ======================================================
+
+        const numericGender = Number(gender);
+
+        if (![0, 1].includes(numericGender)) {
+
+            return res.status(400).json({
+                success: false,
+                message: "Please select a valid gender."
+            });
+        }
+
+
+        // ======================================================
+        // NORMALIZE EMAIL
+        // ======================================================
+
+        const normalizedEmail = email
+            .trim()
+            .toLowerCase();
+
+
+        // ======================================================
+        // CHECK IF USER ALREADY EXISTS
+        // ======================================================
+
+        const existingUser = await User.findOne({
+            email: normalizedEmail
         });
 
+        if (existingUser) {
+
+            return res.status(400).json({
+                success: false,
+                message:
+                    "An account already exists with this email. Please log in instead."
+            });
+        }
+
+
+        // ======================================================
+        // HASH PASSWORD
+        // ======================================================
+
+        const hashedPassword = await bcrypt.hash(
+            password,
+            10
+        );
+
+
+        // ======================================================
+        // CREATE NEW USER
+        // ======================================================
+
+        const user = await User.create({
+
+            name: name.trim(),
+
+            email: normalizedEmail,
+
+            password: hashedPassword,
+
+            gender: numericGender
+        });
+
+
+        // ======================================================
+        // SUCCESS RESPONSE
+        // ======================================================
+
         return res.status(201).json({
+
             success: true,
-            message: "User registered successfully",
+
+            message:
+                "Registration successful. You can now log in.",
+
             user: {
                 id: user._id,
                 name: user.name,
                 email: user.email,
-                age: user.age,
                 gender: user.gender
             }
         });
 
+
     } catch (error) {
 
-        console.error(error);
+        console.error(
+            "Registration Error:",
+            error
+        );
 
         return res.status(500).json({
             success: false,
-            message: "Server Error"
+            message:
+                "Something went wrong during registration. Please try again."
         });
 
     }
+
 };
+
 
 // ======================================================
 // Login User
@@ -71,29 +193,76 @@ exports.loginUser = async (req, res) => {
 
     try {
 
-        const { email, password } = req.body;
+        const {
+            email,
+            password
+        } = req.body;
 
-        // Check if user exists
-        const user = await User.findOne({ email });
+
+        // ======================================================
+        // CHECK REQUIRED FIELDS
+        // ======================================================
+
+        if (!email || !password) {
+
+            return res.status(400).json({
+                success: false,
+                message:
+                    "Please enter both your email and password."
+            });
+        }
+
+
+        // ======================================================
+        // NORMALIZE EMAIL
+        // ======================================================
+
+        const normalizedEmail = email
+            .trim()
+            .toLowerCase();
+
+
+        // ======================================================
+        // CHECK IF USER EXISTS
+        // ======================================================
+
+        const user = await User.findOne({
+            email: normalizedEmail
+        });
 
         if (!user) {
-            return res.status(400).json({
+
+            return res.status(404).json({
                 success: false,
-                message: "Invalid email or password"
+                message:
+                    "No account found with this email. Please register first and then log in."
             });
         }
 
-        // Compare password
-        const isMatch = await bcrypt.compare(password, user.password);
+
+        // ======================================================
+        // COMPARE PASSWORD
+        // ======================================================
+
+        const isMatch = await bcrypt.compare(
+            password,
+            user.password
+        );
 
         if (!isMatch) {
+
             return res.status(400).json({
                 success: false,
-                message: "Invalid email or password"
+                message:
+                    "Incorrect password. Please try again."
             });
         }
 
-        // Generate JWT
+
+        // ======================================================
+        // GENERATE JWT
+        // ======================================================
+
         const token = jwt.sign(
             {
                 id: user._id
@@ -104,10 +273,16 @@ exports.loginUser = async (req, res) => {
             }
         );
 
+
+        // ======================================================
+        // SUCCESS RESPONSE
+        // ======================================================
+
         return res.status(200).json({
 
             success: true,
-            message: "Login successful",
+
+            message: "Login successful.",
 
             token,
 
@@ -115,19 +290,22 @@ exports.loginUser = async (req, res) => {
                 id: user._id,
                 name: user.name,
                 email: user.email,
-                age: user.age,
                 gender: user.gender
             }
-
         });
+
 
     } catch (error) {
 
-        console.error(error);
+        console.error(
+            "Login Error:",
+            error
+        );
 
         return res.status(500).json({
             success: false,
-            message: "Server Error"
+            message:
+                "Something went wrong during login. Please try again."
         });
 
     }

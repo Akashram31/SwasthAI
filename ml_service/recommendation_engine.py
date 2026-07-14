@@ -1,3 +1,4 @@
+
 """
 ============================================================
 SwasthAI
@@ -36,6 +37,8 @@ def generate_recommendations(
     recommendations = []
 
     bmi = inputs["bmi"]
+    high_bp = inputs["highBP"]
+    high_chol = inputs["highChol"]
     smoking = inputs["smoking"]
     alcohol = inputs["alcohol"]
     physical_activity = inputs["physicalActivity"]
@@ -56,6 +59,24 @@ def generate_recommendations(
     elif bmi >= 25:
         recommendations.append(
             "Your BMI indicates that you are overweight. Maintaining a healthy weight can lower your future diabetes risk."
+        )
+
+    # ==========================================================
+    # HIGH BLOOD PRESSURE
+    # ==========================================================
+
+    if high_bp == 1:
+        recommendations.append(
+            "High blood pressure is associated with increased health risks. Regular blood pressure monitoring, physical activity, and a balanced diet may help support better cardiovascular health."
+        )
+
+    # ==========================================================
+    # HIGH CHOLESTEROL
+    # ==========================================================
+
+    if high_chol == 1:
+        recommendations.append(
+            "High cholesterol can increase long-term health risks. Consider maintaining a heart-healthy diet, exercising regularly, and discussing cholesterol management with a healthcare professional."
         )
 
     # ==========================================================
@@ -140,3 +161,4 @@ def generate_recommendations(
         )
 
     return recommendations
+

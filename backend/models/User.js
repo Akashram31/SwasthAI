@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 
+
 const userSchema = new mongoose.Schema(
 {
     name: {
@@ -21,13 +22,6 @@ const userSchema = new mongoose.Schema(
         required: true
     },
 
-    age: {
-        type: Number,
-        required: true,
-        min: 18,
-        max: 120
-    },
-
     gender: {
         type: Number,
         required: true,
@@ -39,5 +33,6 @@ const userSchema = new mongoose.Schema(
 {
     timestamps: true
 });
+
 
 module.exports = mongoose.model("User", userSchema);
