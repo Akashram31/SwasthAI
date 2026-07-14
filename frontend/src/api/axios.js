@@ -5,7 +5,7 @@ import axios from 'axios';
 // api.get('/auth/login') etc, and the auth token is attached
 // automatically by the request interceptor below.
 const api = axios.create({
-    baseURL: 'http://localhost:5000/api'
+    baseURL:'https://swasthai-backend-2u3j.onrender.com/api'
 });
 
 // Attach the JWT token (if present) to every outgoing request.
