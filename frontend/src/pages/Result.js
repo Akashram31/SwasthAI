@@ -36,7 +36,7 @@ function Result() {
 
         fetchResult();
 
-    }, []);
+    }, [id]);
 
     if (!token) {
 
